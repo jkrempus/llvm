@@ -804,6 +804,14 @@ GenericValue ExecutionEngine::getConstantValue(const Constant *C) {
   // Otherwise, we have a simple constant.
   GenericValue Result;
   switch (C->getType()->getTypeID()) {
+  case Type::StructTyID:
+    {
+      size_t num_elems = C->getType()->getStructNumElements();
+      Result.AggregateVal.resize(num_elems);
+      for(size_t i = 0; i < num_elems; i++)
+        Result.AggregateVal[i] = getConstantValue(C->getAggregateElement(i));
+    }
+    break;
   case Type::FloatTyID:
     Result.FloatVal = cast<ConstantFP>(C)->getValueAPF().convertToFloat();
     break;
@@ -966,6 +974,18 @@ void ExecutionEngine::StoreValueToMemory(const GenericValue &Val,
   switch (Ty->getTypeID()) {
   default:
     dbgs() << "Cannot store value of type " << *Ty << "!\n";
+    break;
+  case Type::StructTyID:
+    {
+      auto sl = getDataLayout()->getStructLayout((StructType*)(Ty));
+      for(size_t i = 0; i < Val.AggregateVal.size(); i++)
+      {
+        StoreValueToMemory(
+          Val.AggregateVal[i],
+          (GenericValue*)(size_t(Ptr) + sl->getElementOffset(i)),
+          Ty->getStructElementType(i));
+      }
+    }
     break;
   case Type::IntegerTyID:
     StoreIntToMemory(Val.IntVal, (uint8_t*)Ptr, StoreBytes);
