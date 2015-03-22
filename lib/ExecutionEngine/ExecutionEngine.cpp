@@ -1108,6 +1108,17 @@ void ExecutionEngine::LoadValueFromMemory(GenericValue &Result,
     }
   break;
   }
+  case Type::StructTyID: {
+    auto sl = getDataLayout()->getStructLayout((StructType*)(Ty));
+    for(size_t i = 0; i < Result.AggregateVal.size(); i++)
+    {
+      LoadValueFromMemory(
+        Result.AggregateVal[i],
+        (GenericValue*)(size_t(Ptr) + sl->getElementOffset(i)),
+        Ty->getStructElementType(i));
+    }
+  break;
+  }
   default:
     SmallString<256> Msg;
     raw_svector_ostream OS(Msg);
