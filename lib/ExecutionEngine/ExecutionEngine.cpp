@@ -1109,7 +1109,8 @@ void ExecutionEngine::LoadValueFromMemory(GenericValue &Result,
   break;
   }
   case Type::StructTyID: {
-    auto sl = getDataLayout()->getStructLayout((StructType*)(Ty));
+    auto sl = getDataLayout()->getStructLayout((StructType*)Ty);
+    Result.AggregateVal.resize(Ty->getStructNumElements());
     for(size_t i = 0; i < Result.AggregateVal.size(); i++)
     {
       LoadValueFromMemory(
